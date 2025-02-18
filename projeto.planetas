@@ -1,0 +1,264 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+// Modelo para armazenar dados de cada planeta
+class Planet {
+  String name;
+  String description;     // Mantendo apenas como exemplo
+  double distanceFromSun; // Em Unidades Astronômicas
+  double size;            // Em quilômetros
+
+  Planet({
+    required this.name,
+    required this.description,
+    required this.distanceFromSun,
+    required this.size,
+  });
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'App - Planetas',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  // Lista inicial de planetas
+  final List<Planet> _planets = [
+    Planet(
+      name: 'Mercúrio',
+      description: 'O planeta de fogo...',
+      distanceFromSun: 0.39,
+      size: 4879,
+    ),
+    Planet(
+      name: 'Terra',
+      description: 'O planeta Azul',
+      distanceFromSun: 1.0,
+      size: 12742,
+    ),
+    Planet(
+      name: 'Vênus',
+      description: 'Estrela Dalva',
+      distanceFromSun: 0.72,
+      size: 12104,
+    ),
+    Planet(
+      name: 'Netuno',
+      description: 'Gigante de gelo',
+      distanceFromSun: 30.05,
+      size: 49244,
+    ),
+    Planet(
+      name: 'Qualquer',
+      description: 'Apelido',
+      distanceFromSun: 10.0,
+      size: 15000,
+    ),
+  ];
+
+  // Controladores para adicionar/editar planetas
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _distanceController = TextEditingController();
+  final TextEditingController _sizeController = TextEditingController();
+
+  // Função para mostrar um diálogo de cadastro/edição
+  void _showPlanetDialog({Planet? planet, int? index}) {
+    if (planet != null) {
+      // Se for edição, preenche os campos com os valores atuais
+      _nameController.text = planet.name;
+      _descriptionController.text = planet.description;
+      _distanceController.text = planet.distanceFromSun.toString();
+      _sizeController.text = planet.size.toString();
+    } else {
+      // Se for adição, limpa os campos
+      _nameController.clear();
+      _descriptionController.clear();
+      _distanceController.clear();
+      _sizeController.clear();
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(planet == null ? 'Adicionar Planeta' : 'Editar Planeta'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Nome do planeta
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do planeta *',
+                  ),
+                ),
+                // Descrição (se quiser manter)
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição (opcional)',
+                  ),
+                ),
+                // Distância do Sol (UA)
+                TextField(
+                  controller: _distanceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Distância do Sol (UA) *',
+                  ),
+                ),
+                // Tamanho (km)
+                TextField(
+                  controller: _sizeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Tamanho (km) *',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = _nameController.text.trim();
+                final description = _descriptionController.text.trim();
+                final distanceText = _distanceController.text.trim();
+                final sizeText = _sizeController.text.trim();
+
+                // Validação dos campos obrigatórios
+                if (name.isEmpty ||
+                    distanceText.isEmpty ||
+                    sizeText.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos obrigatórios.'),
+                    ),
+                  );
+                  return;
+                }
+
+                // Tentar converter distância e tamanho para double
+                final distanceValue = double.tryParse(distanceText);
+                final sizeValue = double.tryParse(sizeText);
+
+                if (distanceValue == null || sizeValue == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Distância e Tamanho devem ser números.'),
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  if (planet == null) {
+                    // Adiciona novo planeta
+                    _planets.add(
+                      Planet(
+                        name: name,
+                        description: description,
+                        distanceFromSun: distanceValue,
+                        size: sizeValue,
+                      ),
+                    );
+                  } else {
+                    // Edita planeta existente
+                    _planets[index!] = Planet(
+                      name: name,
+                      description: description,
+                      distanceFromSun: distanceValue,
+                      size: sizeValue,
+                    );
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Função para excluir um planeta
+  void _deletePlanet(int index) {
+    setState(() {
+      _planets.removeAt(index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('App - Planetas'),
+      ),
+      body: ListView.builder(
+        itemCount: _planets.length,
+        itemBuilder: (context, index) {
+          final planet = _planets[index];
+          return ListTile(
+            title: Text(planet.name),
+            subtitle: Text(
+              'Descrição: ${planet.description}\n'
+              'Distância do Sol: ${planet.distanceFromSun} UA\n'
+              'Tamanho: ${planet.size} km',
+            ),
+            isThreeLine: true,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _showPlanetDialog(planet: planet, index: index);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () {
+                    _deletePlanet(index);
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showPlanetDialog();
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
